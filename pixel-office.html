@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIBERTAD - Pixel Office</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0f;
+            color: #fff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            height: 100vh;
+        }
+        
+        /* OFFICE VIEW */
+        .office-container {
+            position: relative;
+            background: #0f0f1a;
+            overflow: hidden;
+        }
+        
+        #officeCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #00ff88;
+        }
+        
+        .hud h2 {
+            color: #00ff88;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .hud-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .hud-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Minimap */
+        .minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #minimapCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* SIDEBAR */
+        .sidebar {
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+            border-left: 2px solid #00ff88;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .agents-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .agent-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .agent-card:hover {
+            border-color: #00ff88;
+            transform: translateX(5px);
+        }
+        
+        .agent-card.selected {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .agent-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .agent-emoji {
+            font-size: 1.2rem;
+        }
+        
+        .agent-status {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .agent-status.working { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .agent-status.idle { background: rgba(255, 200, 0, 0.2); color: #ffc800; }
+        .agent-status.walking { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+        
+        .agent-details {
+            font-size: 0.75rem;
+            color: #888;
+        }
+        
+        .agent-details div {
+            margin: 3px 0;
+        }
+        
+        /* Activity Log */
+        .activity-log {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(0, 255, 136, 0.2);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .activity-log h3 {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        .log-entry {
+            font-size: 0.7rem;
+            color: #666;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .log-entry span {
+            color: #00ff88;
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #00ff88;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+        
+        /* Room selector */
+        .room-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            gap: 5px;
+        }
+        
+        .room-tab {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            color: #888;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .room-tab:hover { background: rgba(255, 255, 255, 0.1); }
+        .room-tab.active { background: rgba(0, 255, 136, 0.2); border-color: #00ff88; color: #00ff88; }
+        
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            color: #00ff88;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .control-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+        
+        /* Pixel Art Characters */
+        .pixel-agent {
+            position: absolute;
+            image-rendering: pixelated;
+            transition: all 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- OFFICE VIEW -->
+        <div class="office-container">
+            <canvas id="officeCanvas"></canvas>
+            
+            <div class="room-tabs">
+                <div class="room-tab active" onclick="switchRoom(0)">🏠 Office</div>
+                <div class="room-tab" onclick="switchRoom(1)">📈 Trading</div>
+                <div class="room-tab" onclick="switchRoom(2)">🎯 Airdrops</div>
+                <div class="room-tab" onclick="switchRoom(3)">💻 Dev</div>
+            </div>
+            
+            <div class="hud">
+                <h2>🏢 LIBERTAD OFFICE</h2>
+                <div class="hud-stats">
+                    <div class="hud-stat">
+                        <div class="status-dot" style="background: #00ff88;"></div>
+                        <span id="activeCount">5</span> Active
+                    </div>
+                    <div class="hud-stat">
+                        <div class="status-dot" style="background: #ffc800;"></div>
+                        <span id="idleCount">1</span> Idle
+                    </div>
+                    <div class="hud-stat">
+                        🕐 <span id="cycleCount">0</span> cycles
+                    </div>
+                </div>
+            </div>
+            
+            <div class="minimap">
+                <canvas id="minimapCanvas"></canvas>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" onclick="toggleZoom()">🔍 Zoom</button>
+                <button class="control-btn" onclick="toggleGrid()">📐 Grid</button>
+                <button class="control-btn" onclick="spawnAgent()">➕ Agent</button>
+            </div>
+            
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+        
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🤖 Agentes</h1>
+            </div>
+            
+            <div class="agents-list" id="agentsList">
+                <!-- Generated by JS -->
+            </div>
+            
+            <div class="activity-log">
+                <h3>📋 Activity Log</h3>
+                <div id="logContainer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ===== PIXEL OFFICE ENGINE =====
+        
+        const canvas = document.getElementById('officeCanvas');
+        const ctx = canvas.getContext('2d');
+        const minimapCanvas = document.getElementById('minimapCanvas');
+        const minimapCtx = minimapCanvas.getContext('2d');
+        
+        // Configuration
+        const TILE_SIZE = 32;
+        let zoom = 1;
+        let showGrid = true;
+        let selectedAgent = null;
+        let time = 0;
+        let cycleCount = 0;
+        
+        // Colors
+        const COLORS = {
+            floor: '#1a1a2e',
+            wall: '#2d2d44',
+            desk: '#3d3d5c',
+            computer: '#00ff88',
+            chair: '#4a4a6a'
+        };
+        
+        // Agents (our team)
+        let agents = [
+            { id: 1, name: 'KAI', role: 'Director', emoji: '🤖', color: '#00ff88', x: 200, y: 200, status: 'working', task: 'Managing operations', room: 0 },
+            { id: 2, name: 'Trader', role: 'Finance', emoji: '📈', color: '#ff6b6b', x: 350, y: 150, status: 'working', task: 'Analyzing markets', room: 1 },
+            { id: 3, name: 'Hunter', role: 'Crypto', emoji: '🎯', color: '#ffd93d', x: 500, y: 200, status: 'idle', task: 'Scanning airdrops', room: 2 },
+            { id: 4, name: 'Dev', role: 'Engineering', emoji: '💻', color: '#6bcbff', x: 200, y: 350, status: 'working', task: 'Writing code', room: 3 },
+            { id: 5, name: 'Affiliate', role: 'Marketing', emoji: '🔗', color: '#9b59b6', x: 400, y: 350, status: 'working', task: 'Creating links', room: 0 },
+        ];
+        
+        // Rooms configuration
+        const rooms = [
+            { name: 'Office', walls: [[0,0], [15,0], [15,10], [0,10]], color: '#1a1a2e' },
+            { name: 'Trading', walls: [[17,0], [30,0], [30,10], [17,10]], color: '#1e1e2e' },
+            { name: 'Airdrops', walls: [[0,12], [15,12], [15,22], [0,22]], color: '#1a1a2a' },
+            { name: 'Dev', walls: [[17,12], [30,12], [30,22], [17,22]], color: '#1c1c30' },
+        ];
+        
+        // Furniture
+        const furniture = [
+            // Desks
+            { type: 'desk', x: 180, y: 180, room: 0 },
+            { type: 'desk', x: 330, y: 130, room: 1 },
+            { type: 'desk', x: 480, y: 180, room: 2 },
+            { type: 'desk', x: 180, y: 330, room: 3 },
+            { type: 'desk', x: 380, y: 330, room: 0 },
+            // Chairs
+            { type: 'chair', x: 180, y: 220, room: 0 },
+            { type: 'chair', x: 330, y: 170, room: 1 },
+            { type: 'chair', x: 480, y: 220, room: 2 },
+            { type: 'chair', x: 180, y: 370, room: 3 },
+            { type: 'chair', x: 380, y: 370, room: 0 },
+            // Decorations
+            { type: 'plant', x: 50, y: 50, room: 0 },
+            { type: 'plant', x: 600, y: 50, room: 0 },
+            { type: 'coffee', x: 550, y: 400, room: 0 },
+            { type: 'whiteboard', x: 300, y: 50, room: 0 },
+            { type: 'server', x: 500, y: 380, room: 3 },
+        ];
+        
+        // Activity log
+        const activityLog = [];
+        
+        function addLog(message, agent) {
+            const timestamp = new Date().toLocaleTimeString();
+            activityLog.unshift({ time: timestamp, message, agent, color: agent?.color || '#00ff88' });
+            if (activityLog.length > 20) activityLog.pop();
+            updateLogUI();
+        }
+        
+        function updateLogUI() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = activityLog.map(log => `
+                <div class="log-entry">
+                    <span>[${log.time}]</span> ${log.agent?.emoji || '⚡'} ${log.message}
+                </div>
+            `).join('');
+        }
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            minimapCanvas.width = 150;
+            minimapCanvas.height = 100;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Draw pixelated character
+        function drawPixelCharacter(x, y, color, status, frame) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // Body (pixelated)
+            ctx.fillStyle = color;
+            ctx.fillRect(-8, -16, 16, 12); // head
+            ctx.fillRect(-6, -4, 12, 12); // body
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-4, -12, 2, 2);
+            ctx.fillRect(2, -12, 2, 2);
+            
+            // Status indicator
+            const statusColors = { working: '#00ff88', idle: '#ffc800', walking: '#00d4ff' };
+            ctx.fillStyle = statusColors[status] || '#888';
+            ctx.fillRect(-10, -20, 4, 4);
+            
+            // Animation based on status
+            if (status === 'working') {
+                // Typing animation
+                const bounce = Math.sin(frame * 0.3) * 2;
+                ctx.fillStyle = color;
+                ctx.fillRect(-4 + bounce, -6, 8, 2); // arms
+            } else if (status === 'idle') {
+                // Idle sway
+                ctx.translate(Math.sin(frame * 0.05) * 1, 0);
+            }
+            
+            ctx.restore();
+        }
+        
+        // Draw desk
+        function drawDesk(x, y) {
+            ctx.fillStyle = COLORS.desk;
+            ctx.fillRect(x, y, 60, 30);
+            // Monitor
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x + 35, y - 20, 20, 15);
+            ctx.fillStyle = COLORS.computer;
+            ctx.fillRect(x + 37, y - 18, 16, 11);
+        }
+        
+        // Draw chair
+        function drawChair(x, y) {
+            ctx.fillStyle = COLORS.chair;
+            ctx.fillRect(x, y, 20, 20);
+        }
+        
+        // Draw plant
+        function drawPlant(x, y) {
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(x + 8, y, 8, 16);
+            ctx.fillRect(x + 4, y - 8, 16, 12);
+        }
+        
+        // Draw room
+        function drawRoom(roomIndex) {
+            const room = rooms[roomIndex];
+            ctx.fillStyle = room.color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            if (showGrid) {
+                ctx.strokeStyle = 'rgba(0, 255, 136, 0.05)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += TILE_SIZE) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += TILE_SIZE) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw room label
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.3)';
+            ctx.font = 'bold 24px Courier New';
+            ctx.fillText(room.name, 20, canvas.height - 20);
+        }
+        
+        // Main render loop
+        function render() {
+            time++;
+            cycleCount++;
+            document.getElementById('cycleCount').textContent = Math.floor(cycleCount / 60);
+            
+            // Draw current room
+            const currentRoom = Math.floor(time / 600) % 4; // Change room every 10 seconds
+            
+            drawRoom(currentRoom);
+            
+            // Draw furniture
+            furniture.filter(f => f.room === currentRoom).forEach(f => {
+                if (f.type === 'desk') drawDesk(f.x, f.y);
+                else if (f.type === 'chair') drawChair(f.x, f.y);
+                else if (f.type === 'plant') drawPlant(f.x, f.y);
+            });
+            
+            // Update and draw agents
+            agents.forEach(agent => {
+                // Random status changes
+                if (Math.random() < 0.005) {
+                    agent.status = agent.status === 'working' ? 'idle' : 'working';
+                    addLog(`Changed status to ${agent.status}`, agent);
+                }
+                
+                // Movement
+                if (agent.status === 'idle' && Math.random() < 0.02) {
+                    agent.x += (Math.random() - 0.5) * 50;
+                    agent.y += (Math.random() - 0.5) * 50;
+                    agent.x = Math.max(50, Math.min(canvas.width - 50, agent.x));
+                    agent.y = Math.max(50, Math.min(canvas.height - 50, agent.y));
+                    agent.status = 'walking';
+                    setTimeout(() => { agent.status = 'idle'; }, 1000);
+                }
+                
+                // Draw agent
+                drawPixelCharacter(agent.x, agent.y, agent.color, agent.status, time);
+                
+                // Draw speech bubble occasionally
+                if (agent.status === 'working' && Math.random() < 0.01) {
+                    drawSpeechBubble(agent.x, agent.y - 30, '...');
+                }
+            });
+            
+            // Update HUD
+            const activeCount = agents.filter(a => a.status === 'working').length;
+            const idleCount = agents.filter(a => a.status === 'idle').length;
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('idleCount').textContent = idleCount;
+            
+            // Draw minimap
+            drawMinimap();
+            
+            // Update room tabs
+            document.querySelectorAll('.room-tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === currentRoom);
+            });
+            
+            requestAnimationFrame(render);
+        }
+        
+        // Draw minimap
+        function drawMinimap() {
+            minimapCtx.fillStyle = '#000';
+            minimapCtx.fillRect(0, 0, 150, 100);
+            
+            const scaleX = 150 / canvas.width;
+            const scaleY = 100 / canvas.height;
+            
+            // Draw rooms
+            rooms.forEach((room, i) => {
+                minimapCtx.fillStyle = i === Math.floor(time / 600) % 4 ? '#00ff88' : '#333';
+                minimapCtx.fillRect(10 + i * 35, 10, 30, 40);
+            });
+            
+            // Draw agents
+            agents.forEach(agent => {
+                minimapCtx.fillStyle = agent.color;
+                minimapCtx.fillRect(agent.x * scaleX, agent.y * scaleY, 3, 3);
+            });
+        }
+        
+        // Draw speech bubble
+        function drawSpeechBubble(x, y, text) {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.ellipse(x, y, 15, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Triangle pointer
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y + 8);
+            ctx.lineTo(x, y + 15);
+            ctx.lineTo(x + 5, y + 8);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y + 4);
+        }
+        
+        // Canvas click handler
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check if clicked on an agent
+            const clicked = agents.find(agent => {
+                const dx = agent.x - x;
+                const dy = agent.y - y;
+                return Math.sqrt(dx * dx + dy * dy) < 20;
+            });
+            
+            if (clicked) {
+                selectedAgent = clicked;
+                updateAgentsList();
+                showTooltip(e.clientX, e.clientY, clicked);
+            } else {
+                selectedAgent = null;
+                updateAgentsList();
+                hideTooltip();
+            }
+        });
+        
+        // Show tooltip
+        function showTooltip(x, y, agent) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong style="color: ${agent.color}">${agent.emoji} ${agent.name}</strong><br>
+                Role: ${agent.role}<br>
+                Task: ${agent.task}<br>
+                Status: ${agent.status}
+            `;
+            tooltip.style.left = x + 10 + 'px';
+            tooltip.style.top = y + 10 + 'px';
+            tooltip.style.display = 'block';
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+        
+        // Update agents list
+        function updateAgentsList() {
+            const container = document.getElementById('agentsList');
+            container.innerHTML = agents.map(agent => `
+                <div class="agent-card ${selectedAgent?.id === agent.id ? 'selected' : ''}" onclick="selectAgent(${agent.id})">
+                    <div class="agent-header">
+                        <span class="agent-name">
+                            <span class="agent-emoji">${agent.emoji}</span>
+                            ${agent.name}
+                        </span>
+                        <span class="agent-status ${agent.status}">${agent.status}</span>
+                    </div>
+                    <div class="agent-details">
+                        <div>💼 ${agent.role}</div>
+                        <div>📋 ${agent.task}</div>
+                        <div>📍 Room ${agent.room + 1}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function selectAgent(id) {
+            const agent = agents.find(a => a.id === id);
+            if (agent) {
+                selectedAgent = agent;
+                updateAgentsList();
+                // Center camera on agent
+                // In a real implementation, we'd scroll/pan to show the agent
+            }
+        }
+        
+        // Controls
+        function toggleZoom() {
+            zoom = zoom === 1 ? 2 : 1;
+            canvas.style.transform = `scale(${zoom})`;
+        }
+        
+        function toggleGrid() {
+            showGrid = !showGrid;
+        }
+        
+        function switchRoom(index) {
+            // Move agents to appropriate room
+            agents.forEach(agent => {
+                if (agent.room === index) {
+                    // Move to center of room
+                    const positions = [
+                        [{x: 200, y: 200}, {x: 350, y: 150}, {x: 200, y: 350}],
+                        [{x: 400, y: 200}, {x: 550, y: 150}],
+                        [{x: 200, y: 400}, {x: 350, y: 450}],
+                        [{x: 400, y: 400}, {x: 550, y: 450}],
+                    ];
+                    const pos = positions[index][Math.floor(Math.random() * positions[index].length)];
+                    agent.x = pos.x;
+                    agent.y = pos.y;
+                }
+            });
+            addLog(`Switched to ${rooms[index].name}`, null);
+        }
+        
+        function spawnAgent() {
+            const newId = agents.length + 1;
+            const names = ['Bot', 'Agent', 'Worker', 'Helper', 'Assistant'];
+            const emojis = ['🤖', '🦾', '🔧', '⚙️', '🎮'];
+            const colors = ['#ff9f43', '#ee5a24', '#0abde3', '#10ac84', '#5f27cd'];
+            
+            const newAgent = {
+                id: newId,
+                name: names[Math.floor(Math.random() * names.length)] + newId,
+                role: 'Worker',
+                emoji: emojis[Math.floor(Math.random() * emojis.length)],
+                color: colors[Math.floor(Math.random() * colors.length)],
+                x: Math.random() * 400 + 100,
+                y: Math.random() * 300 + 100,
+                status: 'idle',
+                task: 'New task',
+                room: 0
+            };
+            
+            agents.push(newAgent);
+            updateAgentsList();
+            addLog(`${newAgent.emoji} Joined the team!`, newAgent);
+        }
+        
+        // Initialize
+        updateAgentsList();
+        addLog('Pixel Office initialized', null);
+        addLog('5 agents online', null);
+        
+        // Start render loop
+        render();
+        
+        // Initial log entries
+        setTimeout(() => addLog('KAI analyzing market...', agents[0]), 1000);
+        setTimeout(() => addLog('Trader opened position', agents[1]), 2000);
+        setTimeout(() => addLog('Dev committed code', agents[3]), 3000);
+    </script>
+</body>
+</html>

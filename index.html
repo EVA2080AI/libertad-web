@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAI - Kollective Autonomous Intelligence</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border-bottom: 2px solid #00ff88;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .logo h1 { font-size: 2rem; color: #00ff88; }
+        .logo span { color: #888; font-size: 0.9rem; }
+        
+        .autonomy-btn {
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .autonomy-btn.active {
+            background: linear-gradient(135deg, #ff4444, #ff6666);
+            color: white;
+        }
+        
+        .autonomy-btn.inactive {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover { border-color: #00ff88; transform: translateY(-5px); }
+        
+        .stat-icon { font-size: 2rem; margin-bottom: 10px; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: #00ff88; }
+        .stat-label { color: #888; font-size: 0.9rem; margin-top: 5px; }
+        
+        /* Agents Grid */
+        .agents-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        
+        .section-title h2 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        
+        .spawn-btn {
+            padding: 10px 20px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            border-radius: 10px;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .spawn-btn:hover { background: rgba(0, 255, 136, 0.4); }
+        
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .agent-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .agent-card:hover { border-color: #00ff88; }
+        
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .agent-emoji { font-size: 2rem; }
+        
+        .agent-info h3 { font-size: 1.1rem; margin-bottom: 5px; }
+        .agent-info span { font-size: 0.8rem; color: #888; }
+        
+        .agent-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .status-working { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .status-idle { background: rgba(255, 200, 0, 0.2); color: #ffc800; }
+        
+        .agent-tasks { 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-left: 15px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .control-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+        }
+        
+        .control-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .toggle {
+            width: 50px;
+            height: 26px;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .toggle.on { background: #00ff88; }
+        .toggle.off { background: #555; }
+        
+        .toggle::after {
+            content: '';
+            display: block;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            margin-top: 2px;
+            transition: transform 0.3s;
+        }
+        
+        .toggle.off::after { transform: translateX(2px); }
+        .toggle.on::after { transform: translateX(24px); }
+        
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            font-family: monospace;
+            font-size: 0.8rem;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .log-time { color: #00ff88; }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.8rem;
+        }
+        
+        .license {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            border-radius: 20px;
+            color: #00ff88;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">🫀</div>
+                <div>
+                    <h1>KAI Control Center</h1>
+                    <span>Kollective Autonomous Intelligence</span>
+                </div>
+            </div>
+            <button class="autonomy-btn inactive" id="autonomyBtn" onclick="toggleAutonomy()">
+                🟢 START AUTONOMY
+            </button>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🧬</div>
+                <div class="stat-value" id="level">1.0</div>
+                <div class="stat-label">Level</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-value" id="cycles">0</div>
+                <div class="stat-label">Cycles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="earned">$0.00</div>
+                <div class="stat-label">Earned</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-value" id="agentCount">6</div>
+                <div class="stat-label">Agents</div>
+            </div>
+        </div>
+        
+        <!-- Agents Section -->
+        <div class="agents-section">
+            <div class="section-title">
+                <h2>🤖 KAI Agents</h2>
+                <button class="spawn-btn" onclick="spawnAgent()">➕ Spawn Agent</button>
+            </div>
+            
+            <div class="agents-grid" id="agentsGrid">
+                <!-- Agents will be rendered here -->
+            </div>
+        </div>
+        
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="control-card">
+                <h3>⚙️ Auto-Program Settings</h3>
+                <div class="toggle-row">
+                    <span>Self-Improvement</span>
+                    <div class="toggle on" id="selfImprove" onclick="toggleSelfImprove()"></div>
+                </div>
+                <div class="toggle-row">
+                    <span>Auto-Code</span>
+                    <div class="toggle on" id="autoCode" onclick="toggleAutoCode()"></div>
+                </div>
+                <div class="toggle-row">
+                    <span>Pattern Learning</span>
+                    <div class="toggle on" id="patternLearn" onclick="togglePatternLearn()"></div>
+                </div>
+            </div>
+            
+            <div class="control-card">
+                <h3>📋 Activity Log</h3>
+                <div class="log-container" id="logContainer">
+                    <!-- Logs will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="license">🪪 KAI FULL ACCESS - UNLIMITED</div>
+            <p>© 2024 KAI - Kollective Autonomous Intelligence</p>
+        </div>
+    </div>
+    
+    <script>
+        // KAI State
+        let state = {
+            level: 1,
+            cycles: 0,
+            earned: 0,
+            agents: [],
+            autonomous: false,
+            selfImprove: true,
+            autoCode: true,
+            patternLearn: true
+        };
+        
+        // Initial Agents
+        const initialAgents = [
+            { name: 'KAI Director', emoji: '🤖', role: 'Gestión y decisiones', status: 'working', tasks: 24, efficiency: 95 },
+            { name: 'KAI Trader', emoji: '📈', role: 'Trading Binance', status: 'idle', tasks: 0, efficiency: 88 },
+            { name: 'KAI Airdrop', emoji: '🎯', role: 'Cazar airdrops', status: 'working', tasks: 12, efficiency: 92 },
+            { name: 'KAI Fullstack', emoji: '💻', role: 'Dev completo', status: 'working', tasks: 8, efficiency: 90 },
+            { name: 'KAI UX/UI', emoji: '🎨', role: 'Diseño interfaces', status: 'idle', tasks: 3, efficiency: 85 },
+            { name: 'KAI Affiliate', emoji: '🔗', role: 'Marketing', status: 'working', tasks: 15, efficiency: 87 }
+        ];
+        
+        state.agents = [...initialAgents];
+        
+        // Render agents
+        function renderAgents() {
+            const grid = document.getElementById('agentsGrid');
+            grid.innerHTML = state.agents.map(agent => `
+                <div class="agent-card">
+                    <div class="agent-header">
+                        <span class="agent-emoji">${agent.emoji}</span>
+                        <div class="agent-info">
+                            <h3>${agent.name}</h3>
+                            <span>${agent.role}</span>
+                        </div>
+                    </div>
+                    <span class="agent-status ${agent.status === 'working' ? 'status-working' : 'status-idle'}">
+                        ${agent.status.toUpperCase()}
+                    </span>
+                    <div class="agent-tasks">
+                        <span>${agent.tasks} tasks</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${agent.efficiency}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Add log
+        function addLog(message) {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            container.insertBefore(entry, container.firstChild);
+        }
+        
+        // Toggle autonomy
+        function toggleAutonomy() {
+            state.autonomous = !state.autonomous;
+            const btn = document.getElementById('autonomyBtn');
+            
+            if (state.autonomous) {
+                btn.className = 'autonomy-btn active';
+                btn.textContent = '🔴 STOP AUTONOMY';
+                addLog('✅ Autonomy ENABLED - KAI is ALIVE');
+                startLifeLoop();
+            } else {
+                btn.className = 'autonomy-btn inactive';
+                btn.textContent = '🟢 START AUTONOMY';
+                addLog('⚠️ Autonomy DISABLED');
+            }
+        }
+        
+        // KAI Life Loop
+        function startLifeLoop() {
+            if (!state.autonomous) return;
+            
+            setInterval(() => {
+                if (!state.autonomous) return;
+                
+                // Increment cycles
+                state.cycles++;
+                state.level = Math.min(1 + state.cycles / 10, 10);
+                
+                // Update agents
+                state.agents.forEach(agent => {
+                    if (agent.status === 'working') {
+                        agent.tasks += Math.floor(Math.random() * 3);
+                        agent.efficiency = Math.min(100, agent.efficiency + Math.random() * 0.5);
+                    }
+                });
+                
+                // Random income
+                if (Math.random() > 0.7) {
+                    const income = Math.random() * 0.5;
+                    state.earned += income;
+                    addLog(`💰 Income: +$${income.toFixed(2)}`);
+                }
+                
+                // Self-improvement
+                if (state.selfImprove && Math.random() > 0.8) {
+                    const improvements = [
+                        'Optimizing trade algorithm',
+                        'Improving agent efficiency',
+                        'Updating security protocols',
+                        'Learning new patterns',
+                        'Optimizing queries'
+                    ];
+                    addLog(`⚡ ${improvements[Math.floor(Math.random() * improvements.length)]}`);
+                }
+                
+                // Update UI
+                updateStats();
+                renderAgents();
+            }, 3000);
+        }
+        
+        // Update stats
+        function updateStats() {
+            document.getElementById('level').textContent = state.level.toFixed(1);
+            document.getElementById('cycles').textContent = state.cycles;
+            document.getElementById('earned').textContent = '$' + state.earned.toFixed(2);
+            document.getElementById('agentCount').textContent = state.agents.length;
+        }
+        
+        // Spawn agent
+        function spawnAgent() {
+            const names = ['Bot', 'Helper', 'Worker', 'Assistant', 'Agent'];
+            const emojis = ['🤖', '🦾', '🔧', '⚙️', '🎮'];
+            
+            const newAgent = {
+                name: `KAI ${names[Math.floor(Math.random() * names.length)]}${state.agents.length + 1}`,
+                emoji: emojis[Math.floor(Math.random() * emojis.length)],
+                role: 'Autonomous Worker',
+                status: 'working',
+                tasks: 0,
+                efficiency: 75
+            };
+            
+            state.agents.push(newAgent);
+            addLog(`🌱 New agent spawned: ${newAgent.name}`);
+            renderAgents();
+            updateStats();
+        }
+        
+        // Toggle functions
+        function toggleSelfImprove() {
+            state.selfImprove = !state.selfImprove;
+            document.getElementById('selfImprove').className = 'toggle ' + (state.selfImprove ? 'on' : 'off');
+        }
+        
+        function toggleAutoCode() {
+            state.autoCode = !state.autoCode;
+            document.getElementById('autoCode').className = 'toggle ' + (state.autoCode ? 'on' : 'off');
+        }
+        
+        function togglePatternLearn() {
+            state.patternLearn = !state.patternLearn;
+            document.getElementById('patternLearn').className = 'toggle ' + (state.patternLearn ? 'on' : 'off');
+        }
+        
+        // Initialize
+        renderAgents();
+        updateStats();
+        addLog('🚀 KAI System Initialized');
+        addLog('📊 License: FULL ACCESS');
+        addLog('📧 User: sebastian689@gmail.com');
+    </script>
+</body>
+</html>
